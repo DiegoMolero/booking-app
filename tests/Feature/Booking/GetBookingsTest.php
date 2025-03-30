@@ -18,20 +18,20 @@ class GetBookingsTest extends TestCase
         // Create 3 fake bookings with valid room_id
         Booking::factory()->create([
             'room_id' => 1,
-            'start_time' => '2025-04-01T12:00:00Z',
-            'end_time' => '2025-04-01T14:00:00Z',
+            'start_time' => '2025-04-01T12:00:00',
+            'end_time' => '2025-04-01T14:00:00',
             'date' => '2025-04-01'
         ]);
         Booking::factory()->create([
             'room_id' => 2,
-            'start_time' => '2025-04-01T12:00:00Z',
-            'end_time' => '2025-04-01T14:00:00Z',
+            'start_time' => '2025-04-01T12:00:00',
+            'end_time' => '2025-04-01T14:00:00',
             'date' => '2025-04-01'
         ]);
         Booking::factory()->create([
             'room_id' => 3,
-            'start_time' => '2025-04-01T12:00:00Z',
-            'end_time' => '2025-04-01T14:00:00Z',
+            'start_time' => '2025-04-01T12:00:00',
+            'end_time' => '2025-04-01T14:00:00',
             'date' => '2025-04-01'
         ]);
 

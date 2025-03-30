@@ -16,12 +16,15 @@ class GetAvailableRoomsTest extends TestCase
      */
     public function test_it_returns_available_rooms()
     {
-        Booking::factory()->create([
+        $existingBooking = $this->postJson('/api/bookings', [
             'room_id' => 1,
+            'user_name' => 'Diego1',
             'date' => '2025-04-01',
             'start_time' => '2025-04-01T12:00:00Z',
             'end_time' => '2025-04-01T14:00:00Z',
-        ]); // One room is booked.
+        ]);
+
+        $existingBooking->assertStatus(201);
 
         $response = $this->getJson('/api/available-rooms?date=2025-04-01&time=12:30');
 
@@ -50,31 +53,51 @@ class GetAvailableRoomsTest extends TestCase
      */
     public function test_it_returns_no_available_rooms_when_all_are_booked()
     {
+        $response = $this->getJson('/api/available-rooms?date=2025-04-01&time=12:30');
+
+        // Expecting all 3 rooms to be available.
+        $response->assertStatus(200)
+                 ->assertJsonCount(3);
+
         // Book both rooms at the same time.
-        Booking::factory()->create([
+        $response = $this->postJson('/api/bookings', [
             'room_id' => 1,
+            'user_name' => 'Diego1',
             'date' => '2025-04-01',
             'start_time' => '2025-04-01T12:00:00Z',
             'end_time' => '2025-04-01T14:00:00Z',
         ]);
-        Booking::factory()->create([
+        $response->assertStatus(201);
+
+        $response = $this->postJson('/api/bookings', [
             'room_id' => 2,
+            'user_name' => 'Diego2',
             'date' => '2025-04-01',
             'start_time' => '2025-04-01T12:00:00Z',
             'end_time' => '2025-04-01T14:00:00Z',
         ]);
-        Booking::factory()->create([
+        $response->assertStatus(201);
+
+        $response = $this->postJson('/api/bookings', [
             'room_id' => 3,
+            'user_name' => 'Diego3',
             'date' => '2025-04-01',
             'start_time' => '2025-04-01T12:00:00Z',
             'end_time' => '2025-04-01T14:00:00Z',
         ]);
+        $response->assertStatus(201);
 
         $response = $this->getJson('/api/available-rooms?date=2025-04-01&time=12:30');
 
         // Expecting an empty array because all rooms are booked.
         $response->assertStatus(200)
                  ->assertExactJson([]);
+
+        $response = $this->getJson('/api/available-rooms?date=2025-04-01&time=12:00');
+
+        // Expecting an empty array because all rooms are booked.
+        $response->assertStatus(200)
+                ->assertExactJson([]);
     }
 
     /**

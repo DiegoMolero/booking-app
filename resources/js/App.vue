@@ -40,8 +40,20 @@
                 </div>
             </div>
             <div class="col-md-12 text-center">
-                <button class="btn btn-primary btn-sm" @click="makeBooking" tabindex="0" aria-label="Make booking">Make booking</button>
+                <hr>
             </div>
+
+            <div class="col-md-6 text-center">
+                <div class="mb-3">
+                    <button id="checkAvailabilityButton" class="btn btn-primary btn-sm me-2" @click="getAvailableRooms" tabindex="0" aria-label="Check availability" role="button">Check Availability</button>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <div class="mb-3">
+                    <button id="makeBookingButton" class="btn btn-primary btn-sm" @click="makeBooking" tabindex="0" aria-label="Make booking" role="button">Make Booking</button>
+                </div>
+            </div>
+
             <div class="col-md-12">
                 <div v-if="error" class="alert alert-danger mt-2">
                     {{ error }}
@@ -50,11 +62,11 @@
         </div>
 
         <div class="row">
-            <div class="col-12">
+            <div class="col-12" style="height: 350px; overflow-y: scroll;">
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Room ID</th>
+                            <th>Room Name</th>
                             <th>User Name</th>
                             <th>Date</th>
                             <th>Start Time</th>
@@ -63,7 +75,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="item in bookings" :key="item.id">
-                            <td>{{ item.room_id }}</td>
+                            <td>{{ item.room_name }}</td>
                             <td>{{ item.user_name }}</td>
                             <td>{{ item.date }}</td>
                             <td>{{ item.start_time }}</td>
@@ -90,13 +102,14 @@ export default {
         };
     },
     mounted() {
+        this.availableRooms = [];
+        this.listAvailableRooms = [];
         this.refresh();
     },
     methods: {
         async getAvailableRooms() {
             this.error = null;
-            this.availableRooms = [];
-            this.listAvailableRooms = [];
+            var listAvailableRooms = [];
             try {
                 const formattedTime = this.selectedTime.toString().padStart(2, '0');
                 const response = await fetch(`api/available-rooms?date=${this.selectedDate}&time=${formattedTime}:00`);
@@ -105,7 +118,18 @@ export default {
                 }
                 this.availableRooms = await response.json();
                 for (const availableRoom of this.availableRooms) {
-                    this.listAvailableRooms.push(`#${availableRoom.id} ${availableRoom.name}`)
+                    listAvailableRooms.push(`#${availableRoom.id} ${availableRoom.name}`)
+                }
+                // update the listAvailableRooms and refresh the list
+                this.listAvailableRooms = listAvailableRooms;
+                if (listAvailableRooms.length > 0) {
+                    this.selectedRoom = this.listAvailableRooms[0];
+                }
+                const makeBookingButton = document.getElementById('makeBookingButton');
+                if (this.availableRooms.length === 0) {
+                    makeBookingButton.disabled = true; // Disable the button
+                } else {
+                    makeBookingButton.disabled = false; // Enable the button
                 }
             } catch (err) {
                 this.error = err.message;
@@ -120,6 +144,13 @@ export default {
                     throw new Error('Failed to get bookings');
                 }
                 this.bookings = await response.json();
+                this.bookings = this.bookings.map(booking => {
+                    return {
+                        ...booking,
+                        start_time: booking.start_time.substring(11, 16),
+                        end_time: booking.end_time.substring(11, 16)
+                    };
+                });
             } catch (err) {
                 this.error = err.message;
             }
@@ -129,14 +160,18 @@ export default {
             try {
                 // Get user_name from input
                 if (!this.userName) {
-                    document.getElementById('userName').focus();
+                    if (document.getElementById('userName')) {
+                        document.getElementById('userName').focus();
+                    }
                     throw new Error('User name is required');
                 }
 
                 // Get the selected room id from the availableRooms array
                 const selectedRoom = this.availableRooms.find(room => `#${room.id} ${room.name}` === this.selectedRoom);
                 if (!selectedRoom) {
-                    document.getElementById('select').focus();
+                    if(document.getElementById('select')) {
+                        document.getElementById('select').focus();
+                    }
                     throw new Error('Selected room not found');
                 }
 

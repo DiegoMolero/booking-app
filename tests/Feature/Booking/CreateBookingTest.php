@@ -132,13 +132,29 @@ class CreateBookingTest extends TestCase
         $room = Room::factory()->create();
 
         // Create an existing booking for the room
-        $existingBooking = Booking::factory()->create([
+        $existingBooking = $this->postJson('/api/bookings', [
             'room_id' => $room->id,
+            'user_name' => 'Diego1',
             'date' => '2025-03-26',
             'start_time' => '2025-03-26T14:00:00Z',
-            'end_time' => '2025-03-26T15:00:00Z',
+            'end_time' => '2025-03-26T15:00:00Z', 
         ]);
 
+        $existingBooking->assertStatus(201);
+
+        // Should fail - overlaps same time
+        $response = $this->postJson('/api/bookings', [
+            'room_id' => $room->id,
+            'user_name' => 'Diego2',
+            'date' => '2025-03-26',
+            'start_time' => '2025-03-26T14:00:00Z',
+            'end_time' => '2025-03-26T15:00:00Z', 
+        ]);
+
+        $response->assertStatus(409)
+                 ->assertJson([
+                     'error' => 'Room is already booked for the selected time.'
+                 ]);
 
         // Should fail - overlaps by 1 second at end
         $response = $this->postJson('/api/bookings', [

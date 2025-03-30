@@ -14,7 +14,6 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        Log::info('Request body:', ['request' => $request->all()]);
         // Validate input data
         $validator = Validator::make($request->all(), [
             'room_id' => 'required|exists:rooms,id',
@@ -46,25 +45,29 @@ class BookingController extends Controller
         $startUtc = Carbon::parse($booking['start_time']);
         $endUtc = Carbon::parse($booking['end_time']);
     
-        Log::info('2...');
-    
         // Define allowed booking hours (09:00 - 18:00 UTC)
         $openingTime = Carbon::parse($booking['date'] . ' 09:00:00', 'UTC');
         $closingTime = Carbon::parse($booking['date'] . ' 18:00:00', 'UTC');
-    
-        Log::info('3...');
     
         // Check if the booking time is within allowed hours
         if ($startUtc < $openingTime || $endUtc > $closingTime) {
             return response()->json(['error' => 'Bookings are only allowed between 09:00 AM - 06:00 PM UTC.'], 400);
         }
-    
+
         // Check for overlapping bookings
         $alreadyBooked = Booking::where('room_id', $booking['room_id'])
             ->where('date', $booking['date'])
-            ->where('start_time', '<', $booking['end_time'])
-            ->where('end_time', '>', $booking['start_time'])
+            ->where(function ($q1) use ($startUtc, $endUtc) { // 11:00 12:00 - 11:30 12:30
+                $q1->where('end_time', '>', $startUtc)
+                    ->where('start_time', '<', $endUtc)
+            ->orWhere(function ($q2) use ($startUtc, $endUtc) {
+                    $q2->where('start_time', '=', $startUtc); // 11:00 12:00 - 11:00 12:30
+                });
+            })
             ->exists();
+
+        // Log the values for debugging
+        Log::info('Booking Details:', ['room_id' => $booking['room_id'], 'date' => $booking['date'], 'start_time' => $booking['start_time'], 'end_time' => $booking['end_time']]);
     
         if ($alreadyBooked) {
             return response()->json(['error' => 'Room is already booked for the selected time.'], 409);
@@ -84,7 +87,15 @@ class BookingController extends Controller
     
     public function index()
     {
-        $bookings = Booking::all();
+        $bookings = Booking::with('room:id,name')->orderBy('start_time')->get()->map(function ($booking) {
+            return [
+                'room_name' => $booking->room->name,
+                'user_name' => $booking->user_name,
+                'date' => $booking->date,
+                'start_time' => $booking->start_time,
+                'end_time' => $booking->end_time,
+            ];
+        });
         return response()->json($bookings);
     }
 
@@ -104,20 +115,31 @@ class BookingController extends Controller
         // Retrieve validated data
         $filters = $validator->validated();
     
-        // Construct requested datetime in ISO 8601 format (UTC)
-        $requestedDateTime = $filters['date'] . 'T' . $filters['time'] . ':00Z';
+        // Construct requested datetime in SQL datetime format
+        $requestedDateTime = $filters['date'] . ' ' . $filters['time'] . ':00';
         $requestedDate = $filters['date'];
-    
-        Log::info('Available rooms request received', ['date' => $filters['date'], 'time' => $filters['time']]);
-    
-        // Get available rooms (excluding those already booked for the requested time)
-        $availableRooms = Room::whereNotExists(function ($query) use ($requestedDate, $requestedDateTime) {
-            $query->from('bookings')
-                ->whereColumn('bookings.room_id', 'rooms.id')
-                ->where('date', $requestedDate)
-                ->where('start_time', '<=', $requestedDateTime)
-                ->where('end_time', '>', $requestedDateTime);
-        })->select('id', 'name')->get();
+
+        Log::info('Requested DateTime:', ['requestedDateTime' => $requestedDateTime]);
+        Log::info('Requested Date:', ['requestedDate' => $requestedDate]);
+        
+         // Check for overlapping bookings
+         $alreadyBooked = Booking::where('date', $requestedDate)
+            ->where(function ($q1) use ($requestedDateTime) { // 11:00 12:00 - 11:30 12:30
+                $q1->where('end_time', '>', $requestedDateTime)
+                    ->where('start_time', '<=', $requestedDateTime)
+            ->orWhere(function ($q2) use ($requestedDateTime) {
+                    $q2->where('start_time', '=', $requestedDateTime); // 11:00 12:00 - 11:00
+                });
+            })
+            ->pluck('room_id');
+        
+
+        Log::info('Booked Room IDs:', ['alreadyBooked' => $alreadyBooked]);
+
+        // 2. Get available rooms by excluding booked ones
+        $availableRooms = Room::whereNotIn('id', $alreadyBooked)->get();
+
+        Log::info('Available Rooms:', ['availableRooms' => $availableRooms]);
     
         return response()->json($availableRooms->values());
     }

@@ -37,3 +37,23 @@ body {
     background-color: #494949 !important;
     border-color: #555454 !important;
 }
+
+/* Ensures the scrollbar is always visible */
+.col-12::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+}
+
+/* Background color of the scrollbar track */
+.col-12::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Color of the scrollbar thumb (the draggable part) */
+.col-12::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Changes thumb color when hovered */
+.col-12::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

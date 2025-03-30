@@ -128,6 +128,7 @@ export default {
                 const makeBookingButton = document.getElementById('makeBookingButton');
                 if (this.availableRooms.length === 0) {
                     makeBookingButton.disabled = true; // Disable the button
+                    this.error = 'No available rooms';
                 } else {
                     makeBookingButton.disabled = false; // Enable the button
                 }

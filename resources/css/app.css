@@ -9,3 +9,31 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+body {
+    background-color: #c4f0af !important; /* Override Bootstrap body background color */
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+#app {
+    background: #ffffff;
+    padding: 20px;
+}
+
+@media(min-width: 1024px) {
+    #app {
+        width: 768px;
+        height: 868px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+    }
+}
+
+.btn-primary {
+    background-color: #494949 !important;
+    border-color: #555454 !important;
+}

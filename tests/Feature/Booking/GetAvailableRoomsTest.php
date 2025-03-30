@@ -84,7 +84,7 @@ class GetAvailableRoomsTest extends TestCase
     {
         $response = $this->getJson('/api/available-rooms');
 
-        $response->assertStatus(422)
+        $response->assertStatus(400)
                  ->assertJson([
                      'errors' => [
                          'date' => ['The date field is required.'],

@@ -6,13 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Room;
 use Carbon\Carbon; // For handling date and time operations
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
 
     public function store(Request $request)
     {
-        $booking = $request->validate([
+        Log::info('Request body:', ['request' => $request->all()]);
+        // Validate input data
+        $validator = Validator::make($request->all(), [
             'room_id' => 'required|exists:rooms,id',
             'user_name' => 'required|string',
             'date' => [
@@ -30,14 +34,27 @@ class BookingController extends Controller
             ],
         ]);
     
+        // If validation fails, return a 400 response with errors
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+    
+        // Retrieve validated data
+        $booking = $validator->validated();
+    
         // Parse incoming UTC timestamps
         $startUtc = Carbon::parse($booking['start_time']);
         $endUtc = Carbon::parse($booking['end_time']);
+    
+        Log::info('2...');
     
         // Define allowed booking hours (09:00 - 18:00 UTC)
         $openingTime = Carbon::parse($booking['date'] . ' 09:00:00', 'UTC');
         $closingTime = Carbon::parse($booking['date'] . ' 18:00:00', 'UTC');
     
+        Log::info('3...');
+    
+        // Check if the booking time is within allowed hours
         if ($startUtc < $openingTime || $endUtc > $closingTime) {
             return response()->json(['error' => 'Bookings are only allowed between 09:00 AM - 06:00 PM UTC.'], 400);
         }
@@ -53,8 +70,8 @@ class BookingController extends Controller
             return response()->json(['error' => 'Room is already booked for the selected time.'], 409);
         }
     
-        // Store booking in UTC (since frontend already sends UTC)
-        $booking = Booking::create([
+        // Store the booking in UTC (since frontend already sends UTC)
+        $newBooking = Booking::create([
             'room_id' => $booking['room_id'],
             'user_name' => $booking['user_name'],
             'date' => $booking['date'],
@@ -62,7 +79,7 @@ class BookingController extends Controller
             'end_time' => $endUtc->toDateTimeString(),
         ]);
     
-        return response()->json($booking, 201);
+        return response()->json($newBooking, 201);
     }
     
     public function index()
@@ -73,15 +90,27 @@ class BookingController extends Controller
 
     public function availableRooms(Request $request)
     {
-        $validated = $request->validate([
+        // Validate input data
+        $validator = Validator::make($request->all(), [
             'date' => 'required|date_format:Y-m-d',
-            'time' => 'required|date_format:H:i'
+            'time' => 'required|date_format:H:i',
         ]);
-
-        $requestedDateTime = $validated['date'] . 'T' . $validated['time'] . ':00Z';
-        $requestedDate = $validated['date'];
-
-        // Get available rooms (excluding booked ones for requested time)
+    
+        // If validation fails, return a 400 response with errors
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+    
+        // Retrieve validated data
+        $filters = $validator->validated();
+    
+        // Construct requested datetime in ISO 8601 format (UTC)
+        $requestedDateTime = $filters['date'] . 'T' . $filters['time'] . ':00Z';
+        $requestedDate = $filters['date'];
+    
+        Log::info('Available rooms request received', ['date' => $filters['date'], 'time' => $filters['time']]);
+    
+        // Get available rooms (excluding those already booked for the requested time)
         $availableRooms = Room::whereNotExists(function ($query) use ($requestedDate, $requestedDateTime) {
             $query->from('bookings')
                 ->whereColumn('bookings.room_id', 'rooms.id')
@@ -89,7 +118,7 @@ class BookingController extends Controller
                 ->where('start_time', '<=', $requestedDateTime)
                 ->where('end_time', '>', $requestedDateTime);
         })->select('id', 'name')->get();
-
+    
         return response()->json($availableRooms->values());
     }
 }

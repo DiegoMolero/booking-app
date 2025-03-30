@@ -43,8 +43,8 @@ class CreateBookingTest extends TestCase
             'end_time' => '2025-04-01T14:00:00Z',
         ]);
 
-        // Expecting a 422 validation error with a missing 'room_id' field.
-        $response->assertStatus(422)
+        // Expecting a 400 validation error with a missing 'room_id' field.
+        $response->assertStatus(400)
                  ->assertJsonValidationErrors('room_id');
     }
 
@@ -63,7 +63,7 @@ class CreateBookingTest extends TestCase
             'end_time' => '2025-03-26T15:00:00Z',
         ]);
 
-        $response->assertStatus(422); // Unprocessable Entity (validation error)
+        $response->assertStatus(400); // Unprocessable Entity (validation error)
         $response->assertJsonValidationErrors(['date']);
     }
 
@@ -82,7 +82,7 @@ class CreateBookingTest extends TestCase
             'end_time' => '2025-03-26T15:00:00Z',
         ]);
 
-        $response->assertStatus(422); // Unprocessable Entity (validation error)
+        $response->assertStatus(400); // Unprocessable Entity (validation error)
         $response->assertJsonValidationErrors(['start_time']);
     }
 
@@ -101,7 +101,7 @@ class CreateBookingTest extends TestCase
             'end_time' => '2025-03-26T15:00:00+02:00', // Wrong offset, should be 'Z'
         ]);
 
-        $response->assertStatus(422); // Unprocessable Entity (validation error)
+        $response->assertStatus(400); // Unprocessable Entity (validation error)
         $response->assertJsonValidationErrors(['end_time']);
     }
 
@@ -119,7 +119,7 @@ class CreateBookingTest extends TestCase
         ]);
 
         // Expecting a validation error due to invalid time range.
-        $response->assertStatus(422)
+        $response->assertStatus(400)
                  ->assertJsonValidationErrors('end_time');
     }
 

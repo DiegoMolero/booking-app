@@ -1,0 +1,38 @@
+# Laravel & PHP
+/vendor
+/node_modules
+/public/storage
+/storage/*.key
+/storage/oauth-private.key
+/storage/oauth-public.key
+/bootstrap/cache
+/.env
+/.env.local
+/.env.development
+/.env.production
+/.env.testing
+/.phpunit.result.cache
+
+# IDE & System Files
+/.vscode
+/.idea
+/.DS_Store
+/thumbs.db
+*.log
+*.lock
+
+# Composer & NPM
+composer.phar
+npm-debug.log
+yarn-error.log
+package-lock.json
+.pnpm-debug.log
+
+# Vite & Build Files
+/public/build
+/public/hot
+/.vite
+
+# Docker (if applicable)
+/docker-compose.override.yml
+/.docker

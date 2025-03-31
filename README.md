@@ -21,6 +21,11 @@ A simple meeting room booking system built with Laravel and Vite that allows emp
 
 ## Installation
 
+Copy the environment configuration file and modify it as needed:
+   ```bash
+   cp .env.example .env
+   ```
+
 Install PHP dependencies:
    ```bash
    composer install
@@ -45,6 +50,7 @@ To run tests, use the following command:
 
 ## Running the Application
 
+
 To start the development server, use the following command:
    ```bash
    npm run dev
@@ -53,4 +59,9 @@ To start the development server, use the following command:
 To build the project for production, use:
    ```bash
    npm run build
+   ```
+
+To run the Laravel application, start the local server with:
+   ```bash
+   php artisan serve
    ```
